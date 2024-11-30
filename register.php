@@ -1,47 +1,31 @@
 <?php 
 include 'config.php';
 
-session_start();
-
 if(isset($_POST['submit'])){
-    $name = $_POST['name'];
-    $name = filter_var($name,FILTER_SANITIZE_STRING);
-    $email = $_POST['email'];
-    $email = filter_var($email,FILTER_SANITIZE_STRING);
-    $password = $_POST['password'];
-    $password = filter_var($password,FILTER_SANITIZE_STRING);
-    $cpassword = $_POST['cpassword'];
-    $cpassword = filter_var($cpassword,FILTER_SANITIZE_STRING);
+    $filter_name = filter_var($_POST['name'],FILTER_SANITIZE_STRING);
+    $name = mysqli_real_escape_string($conn,$filter_name);
+    $filter_email =filter_var($_POST['email'],FILTER_SANITIZE_STRING);
+    $email = mysqli_real_escape_string($conn,$filter_email);
+    $filter_pass = filter_var($_POST['pass'],FILTER_SANITIZE_STRING);
+    $pass = mysqli_real_escape_string($conn,$filter_pass);
+    $filter_cpass = filter_var($_POST['cpass'],FILTER_SANITIZE_STRING);
+    $cpass = mysqli_real_escape_string($conn,$filter_cpass);
 
-    $image = $_FILES['image']['name'];
-    $image_tmp_name = $_FILES['image']['tmp_name'];
-    $image_size = $_FILES['image']['size'];
-    $image_folder = 'uploaded_img/'.$image;
-
-    $select = $conn->prepare("SELECT * FROM users WHERE email=?");
-    $select->execute([$email]);
-
-    if($select->rowCount()>0){
-        $message[] ="User already exist";
+    $select_user = mysqli_query($conn,"SELECT * FROM `users` WHERE email = '$email'");
+     
+    if(mysqli_num_rows($select_user) > 0){
+        $message[] = 'user already exist';
     }else{
-        if($password != $cpassword){
-            $message[] ="Confirm password does not match";
+        if($pass != $cpass){
+            $message[] = 'confirm password does match';
         }else{
-            $insert = $conn->prepare("INSERT INTO users(name,email,password,image) VALUES(?,?,?,?)");
-            $insert->execute([$name,$email,$password,$image]);
-
-            if($insert){
-                if($image_size>200000000){
-                    $message[] ="image size is too large";
-                }else{
-                    move_uploaded_file($image_tmp_name,$image_folder);
-                    $message[] ="registered successfully";
-                    header('location:login.php');
-                }
-            }
+           mysqli_query($conn,"INSERT INTO `users`(name,email,password) VALUES('$name','$email','$pass')");
+           $message[] = 'You have been registered successfully';
+           header('location:login.php');
         }
     }
 }
+
 
 ?>
 
@@ -52,32 +36,35 @@ if(isset($_POST['submit'])){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>register</title>
-    <link rel="stylesheet" href="style.css">
+
+    <!-- custom css file -->
+     <link rel="stylesheet" href="style.css">
+
+     <!-- font awesome cdn link -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
-<?php  
-   if(isset($message)){
-    foreach($message as $message){
-        echo'
-        <div class="message">
-            <span>'.$message.'</span>
-        </div>
-        ';
-    }
-   }
-
-?>
-<section class="form-container">
-    <form action="" method="post" enctype="multipart/form-data">
-        <h3>register now</h3>
-        <input type="text" name="name" placeholder="enter your name" required class="box">
-        <input type= "email" name= "email" placeholder="enter your email" required class="box">
-        <input type="password" name="password" placeholder="enter your password" required class="box">
-        <input type="password" name="cpassword" placeholder="confirm your password" required class="box">
-        <input type="file" name="image" required class="box">
-        <input type="submit" name="submit" value="register now" required class="btn">
-        <p>Already have an account? <a href="login.php">login now</a></p>
-    </form>
-</section>
+    <?php 
+      if(isset($message)){
+        foreach($message as $message){
+            echo'
+            <div class="message">
+                <span>'.$message.'</span>
+            </div>
+            ';
+        }
+      }
+    ?>
+    <section class="form-container">
+        <form action="" method="post">
+            <h3>register on flower store</h3>
+            <input type="text" name="name" class="box" required placeholder="enter your name">
+            <input type="email" name="email" class="box" required placeholder="enter your email">
+            <input type="password" name="pass" class="box" required placeholder="enter your password">
+            <input type="password" name="cpass" class="box" required placeholder="confirm your password">
+            <input type="submit" name="submit" class="btn" value="register now">
+            <p>already have an account? <a href="login.php">login now</a></p>
+        </form>
+    </section>
 </body>
 </html>
